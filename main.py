@@ -12,16 +12,27 @@ def index():
 def get_stream(video_id):
     try:
         ydl_opts = {
-            "format": "best",
-            "quiet": True,
-            "no_warnings": True,
+            "format": "18/bestvideo+bestaudio/best",
+            "quiet": False,
+            "no_warnings": False,
+            "extractor_args": {"youtube": {"skip": ["dash", "hls"]}},
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(
                 f"https://www.youtube.com/watch?v={video_id}",
                 download=False
             )
-            url = info.get("url") or info.get("webpage_url")
+            # Tüm formatları logla
+            for f in info.get("formats", []):
+                print(f"FORMAT: {f.get('format_id')} | {f.get('ext')} | acodec:{f.get('acodec')} | vcodec:{f.get('vcodec')} | url:{str(f.get('url',''))[:50]}")
+            
+            url = info.get("url")
+            if not url:
+                formats = info.get("formats", [])
+                playable = [f for f in formats if f.get("url") and f.get("acodec") != "none"]
+                if playable:
+                    url = playable[-1]["url"]
+            
             return jsonify({
                 "url": url,
                 "title": info.get("title", ""),
