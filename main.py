@@ -12,7 +12,7 @@ def index():
 def get_stream(video_id):
     try:
         ydl_opts = {
-            "format": "bestaudio",
+            "format": "best",
             "quiet": True,
             "no_warnings": True,
         }
@@ -21,32 +21,12 @@ def get_stream(video_id):
                 f"https://www.youtube.com/watch?v={video_id}",
                 download=False
             )
-            formats = info.get("formats", [])
-            
-            # Önce sadece ses formatlarını dene
-            audio_only = [
-                f for f in formats
-                if f.get("acodec") != "none" 
-                and f.get("vcodec") in ("none", None)
-                and f.get("url")
-            ]
-            
-            if audio_only:
-                best = max(audio_only, key=lambda f: f.get("abr") or f.get("tbr") or 0)
-            else:
-                # Ses+video karışık formatları dene
-                mixed = [f for f in formats if f.get("url") and f.get("acodec") != "none"]
-                if not mixed:
-                    return jsonify({"error": "Format bulunamadı"}), 404
-                best = mixed[-1]
-
+            url = info.get("url") or info.get("webpage_url")
             return jsonify({
-                "url": best["url"],
+                "url": url,
                 "title": info.get("title", ""),
                 "duration": info.get("duration", 0),
-                "thumbnail": info.get("thumbnail", ""),
-                "ext": best.get("ext", ""),
-                "abr": best.get("abr", 0)
+                "thumbnail": info.get("thumbnail", "")
             })
 
     except Exception as e:
