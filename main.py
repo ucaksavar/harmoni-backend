@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 import yt_dlp
 import os
 
@@ -12,38 +12,43 @@ def index():
 def get_stream(video_id):
     try:
         ydl_opts = {
-            "format": "bestaudio/best",
+            "format": "bestaudio",
             "quiet": True,
             "no_warnings": True,
-            "extract_flat": False,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(
                 f"https://www.youtube.com/watch?v={video_id}",
                 download=False
             )
-            # En iyi ses formatını bul
             formats = info.get("formats", [])
-            audio_formats = [
+            
+            # Önce sadece ses formatlarını dene
+            audio_only = [
                 f for f in formats
-                if f.get("acodec") != "none" and f.get("vcodec") == "none"
+                if f.get("acodec") != "none" 
+                and f.get("vcodec") in ("none", None)
+                and f.get("url")
             ]
-            if audio_formats:
-                best = max(audio_formats, key=lambda f: f.get("abr") or 0)
-                return jsonify({
-                    "url": best["url"],
-                    "title": info.get("title", ""),
-                    "duration": info.get("duration", 0),
-                    "thumbnail": info.get("thumbnail", "")
-                })
+            
+            if audio_only:
+                best = max(audio_only, key=lambda f: f.get("abr") or f.get("tbr") or 0)
             else:
-                # Ses formatı yoksa video+ses karışık al
-                return jsonify({
-                    "url": info["url"],
-                    "title": info.get("title", ""),
-                    "duration": info.get("duration", 0),
-                    "thumbnail": info.get("thumbnail", "")
-                })
+                # Ses+video karışık formatları dene
+                mixed = [f for f in formats if f.get("url") and f.get("acodec") != "none"]
+                if not mixed:
+                    return jsonify({"error": "Format bulunamadı"}), 404
+                best = mixed[-1]
+
+            return jsonify({
+                "url": best["url"],
+                "title": info.get("title", ""),
+                "duration": info.get("duration", 0),
+                "thumbnail": info.get("thumbnail", ""),
+                "ext": best.get("ext", ""),
+                "abr": best.get("abr", 0)
+            })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
