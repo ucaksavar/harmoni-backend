@@ -12,17 +12,14 @@ def index():
 def get_stream(video_id):
     try:
         ydl_opts = {
-    "format": "18/best",
-    "quiet": False,
-    "extractor_args": {
-        "youtube": {
-            "player_client": ["android_vr"],
+            "format": "bestaudio/best",
+            "quiet": False,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["web"],
+                }
+            },
         }
-    },
-    "http_headers": {
-        "User-Agent": "com.google.android.apps.youtube.vr.oculus/1.56.520 (Linux; Android 12; Build/SKQ1.211006.001) gzip",
-    },
-}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(
                 f"https://www.youtube.com/watch?v={video_id}",
