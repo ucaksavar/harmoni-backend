@@ -45,8 +45,3 @@ def get_stream(video_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
-```
-
-Commit et, 2 dakika bekle, sonra tarayıcıda şunu aç:
-```
-https://harmoni-backend-ck6u.onrender.com/stream/dQw4w9WgXcQ
