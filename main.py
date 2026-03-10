@@ -12,37 +12,41 @@ def index():
 def get_stream(video_id):
     try:
         ydl_opts = {
-            "format": "18/bestvideo+bestaudio/best",
+            "format": "bestaudio/best",
             "quiet": False,
-            "no_warnings": False,
-            "extractor_args": {"youtube": {"skip": ["dash", "hls"]}},
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["tv_embedded"],
+                    "player_skip": ["webpage"],
+                }
+            },
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(
                 f"https://www.youtube.com/watch?v={video_id}",
                 download=False
             )
-            # Tüm formatları logla
-            for f in info.get("formats", []):
-                print(f"FORMAT: {f.get('format_id')} | {f.get('ext')} | acodec:{f.get('acodec')} | vcodec:{f.get('vcodec')} | url:{str(f.get('url',''))[:50]}")
-            
             url = info.get("url")
             if not url:
-                formats = info.get("formats", [])
-                playable = [f for f in formats if f.get("url") and f.get("acodec") != "none"]
-                if playable:
-                    url = playable[-1]["url"]
-            
+                formats = [f for f in info.get("formats", []) if f.get("url") and f.get("acodec") != "none"]
+                if formats:
+                    url = formats[-1]["url"]
+            if not url:
+                return jsonify({"error": "URL bulunamadı"}), 404
             return jsonify({
                 "url": url,
                 "title": info.get("title", ""),
                 "duration": info.get("duration", 0),
                 "thumbnail": info.get("thumbnail", "")
             })
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
+```
+
+Commit et, 2 dakika bekle, sonra tarayıcıda şunu aç:
+```
+https://harmoni-backend-ck6u.onrender.com/stream/dQw4w9WgXcQ
